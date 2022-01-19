@@ -145,6 +145,11 @@ parameters:
       If a `capacity-provider-strategy` is specified, the `launch-type` parameter must be set to an empty string.
     type: string
     default: ""
+  wait-for-completion:
+    description: |
+      Specifies whether to wait for the task to complete before returning.
+    type: boolean
+    default: false
 steps:
   - aws-cli/setup:
       aws-access-key-id: << parameters.aws-access-key-id >>
@@ -169,3 +174,4 @@ steps:
       enable-ecs-managed-tags: << parameters.enable-ecs-managed-tags >>
       propagate-tags: << parameters.propagate-tags >>
       capacity-provider-strategy: << parameters.capacity-provider-strategy >>
+      wait-for-completion: << parameters.wait-for-completion >>

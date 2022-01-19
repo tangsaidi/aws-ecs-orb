@@ -75,4 +75,25 @@ set -- "$@" --task-definition $ECS_PARAM_TASK_DEF
 echo "Setting --cluster"
 set -- "$@" --cluster "$ECS_PARAM_CLUSTER_NAME"
 
-aws ecs run-task "$@"
+if [ "$ECS_PARAM_WAIT_FOR_COMPLETION" == "1" ]; then
+    echo "Setting --query"
+    set -- "$@" --query 'tasks[].taskArn' 
+    echo "Setting --output"
+    set -- "$@" --output text
+fi
+
+ARN_VAL=$(aws ecs run-task "$@")
+echo "Task created with ARN: $ARN_VAL"
+
+if [ "$ECS_PARAM_WAIT_FOR_COMPLETION" == "1" ]; then
+    echo "Waiting for task to complete..."
+    aws ecs wait tasks-stopped --cluster "$ECS_PARAM_CLUSTER_NAME" --tasks "$ARN_VAL"
+    EXIT_VAL=$(aws ecs describe-tasks --cluster $ECS_PARAM_CLUSTER_NAME --tasks $ARN_VAL --query 'tasks[0].containers[0].exitCode' --output text)
+    echo "Task exited with code: $EXIT_VAL"
+    if [ "$EXIT_VAL" = "0" ]; then 
+        echo "DB script execution was successful!"
+    else 
+        echo "Errors encountered while running the task. Please check the logs."
+        exit 1
+    fi
+fi
